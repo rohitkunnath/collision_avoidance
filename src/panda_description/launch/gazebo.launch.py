@@ -1,0 +1,104 @@
+import os
+from os import pathsep
+from pathlib import Path
+from ament_index_python.packages import get_package_share_directory
+
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution, PythonExpression
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+
+from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
+
+
+def generate_launch_description():
+    panda_description = get_package_share_directory("panda_description")
+
+    model_arg = DeclareLaunchArgument(
+        name="model", default_value=os.path.join(
+                panda_description, "urdf", "panda.urdf.xacro"
+            ),
+        description="Absolute path to robot urdf file"
+    )
+
+    world_name_arg = DeclareLaunchArgument(name="world_name", default_value="myworld.sdf")
+
+    world_path = PathJoinSubstitution([
+            panda_description,
+            "worlds",
+            LaunchConfiguration("world_name")
+        ]
+    )
+
+    model_path = str(Path(panda_description).parent.resolve())
+    model_path += pathsep + os.path.join(get_package_share_directory("panda_description"), 'models')
+
+    gazebo_resource_path = SetEnvironmentVariable(
+        "IGN_GAZEBO_RESOURCE_PATH",
+        model_path
+        )
+
+    ros_distro = os.environ["ROS_DISTRO"]
+    is_ignition = "True" if ros_distro == "humble" else "False"
+
+    robot_description = ParameterValue(Command([
+            "xacro ",
+            LaunchConfiguration("model"),
+            " is_ignition:=",
+            is_ignition
+        ]),
+        value_type=str
+    )
+
+    robot_state_publisher_node = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        parameters=[{"robot_description": robot_description,
+                     "use_sim_time": True}]
+    )
+
+    gazebo = IncludeLaunchDescription(
+                PythonLaunchDescriptionSource([os.path.join(
+                    get_package_share_directory("ros_ign_gazebo"), "launch"), "/ign_gazebo.launch.py"]),
+                launch_arguments={
+                    "ign_args": PythonExpression(["'", world_path, " -v 4 -r'"])
+                }.items()
+             )
+
+
+    ign_spawn_entity = Node(
+        package="ros_ign_gazebo",
+        executable="create",
+        output="screen",
+        arguments=[
+            "-topic", "robot_description",
+            "-name", "panda",
+            "-x", "0.0",  
+            "-y", "0.0",  
+            "-z", "0.0",  
+            "-R", "0.0", 
+            "-P", "0.0",
+            "-Y", "0.0", # Yaw (in radians, e.g., 1.57 for 90 degrees)
+        ],
+    )
+
+
+    ign_ros2_bridge = Node(
+        package="ros_ign_bridge",
+        executable="parameter_bridge",
+        arguments=[
+            "/clock@rosgraph_msgs/msg/Clock[ign.msgs.Clock",
+        ],
+    )
+
+
+    return LaunchDescription([
+        model_arg,
+        world_name_arg,
+        gazebo_resource_path,
+        robot_state_publisher_node,
+        gazebo,
+        ign_spawn_entity,
+        ign_ros2_bridge,
+    ])
