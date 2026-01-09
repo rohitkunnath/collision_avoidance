@@ -30,7 +30,7 @@ The workspace contains the following packages:
 
 2.  **Clone this Repository**:
     ```bash
-    git clone <repo_url>
+    git clone https://github.com/rohitkunnath/collision_avoidance.git
     ```
 
 3.  **Setup the Workspace**:
