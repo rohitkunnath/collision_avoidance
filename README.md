@@ -1,5 +1,11 @@
 # Panda Robot Arm Project
 
+## Demo Video
+click on the image to play video
+
+[![Demo Video](demo.jpg)](https://drive.google.com/file/d/1zhInSWqQrIv64tRTlV035u_HbHlNKw5r/view)
+
+
 ## Structure
 The workspace contains the following packages:
 - **panda_bringup**: Main launch files and demo scripts.
@@ -17,26 +23,27 @@ The workspace contains the following packages:
 
 ## Installation & Build
 
-1.  **Clone the repository** (if you haven't already):
+1.  **Create the Workspace**:
     ```bash
-    cd ~/arm2_ws/src
-    # git clone <repo_url> .
+    mkdir -p ~/arm_ws
     ```
 
-2.  **Install Dependencies**:
-    Navigate to the workspace root and install required dependencies.
+2.  **Clone this Repository**:
     ```bash
-    cd ~/arm2_ws
-    rosdep update
-    rosdep install --from-paths src --ignore-src -r -y
+    git clone <repo_url>
     ```
 
-3.  **Build the Workspace**:
+3.  **Setup the Workspace**:
+    Copy the `src` folder from the cloned repository directly to your workspace.
+
+4.  **Build the Workspace**:
+    Navigate to the workspace root and build using colcon.
     ```bash
+    cd ~/arm_ws
     colcon build
     ```
 
-4.  **Source the Workspace**:
+5.  **Source the Workspace**:
     ```bash
     source install/setup.bash
     ```
@@ -44,7 +51,7 @@ The workspace contains the following packages:
 ## Usage
 
 ###  Launch the Simulation
-This command launches Gazebo, spawns the Panda robot, and starts MoveIt 2 and RViz.
+This command launches Gazebo, spawns the Panda robot and starts MoveIt 2 and RViz.
 ```bash
 ros2 launch panda_bringup demo.launch.py
 ```
